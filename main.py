@@ -3,6 +3,8 @@ from threading import Thread
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
+from moviepy.editor import *
+import os
 
 
 def download_video(video, index, update_callback):
@@ -16,17 +18,25 @@ def update_listbox_color(index, color):
         listbox.itemconfig(index, bg=color)
     listbox.after(0, task)
 
+def mp3convert(stream, path):
+    file = AudioFileClip(path)
+    file.write_audiofile(stream.title + ".mp3", logger=None )
+    file.close()
+    os.remove(path)
+
 def add_item():
     item = entry.get()
+    
     if item:
         entry.delete(0, tk.END)
         try:
             pl = Playlist(item)
         
-            messagebox.showinfo("Collecting...", "Collecting Videos and starting download, this might take a while. Click OK to progress")
             for i, video in enumerate(pl.videos):
+                
                 listbox.insert(tk.END, video.title)
                 listbox.itemconfig(i, bg='red')  # initial color before download
+                video.register_on_complete_callback(mp3convert)
                 # start download in a separate thread
                 Thread(target=download_video, args=(video, i, update_listbox_color)).start()
         except Exception:
